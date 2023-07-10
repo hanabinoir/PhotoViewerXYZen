@@ -4,5 +4,5 @@ class PhotoRepository {
 
     private val service = APIService.photoService
 
-    suspend fun getPhotos(query: String) = service.getPhotos(query)
+    suspend fun getPhotos(query: String? = null) = service.getPhotos(query)
 }

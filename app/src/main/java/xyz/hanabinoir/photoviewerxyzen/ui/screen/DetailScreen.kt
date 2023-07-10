@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import coil.compose.SubcomposeAsyncImage
 
-
 @Composable
 fun DetailScreen(
     selectedPhoto: String? = null,
