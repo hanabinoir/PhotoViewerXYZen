@@ -1,10 +1,10 @@
 package xyz.hanabinoir.photoviewerxyzen.data
 
-data class PhotoListModel(
-    val photos: List<PhotoModel>
+data class PhotoSearch(
+    val photos: List<Photo>
 )
 
-data class PhotoModel(
+data class Photo(
     val id: Int,
     val photographer: String,
     val alt: String,
