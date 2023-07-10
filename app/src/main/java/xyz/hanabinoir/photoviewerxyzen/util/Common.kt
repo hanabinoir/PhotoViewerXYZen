@@ -1,6 +1,6 @@
-package xyz.hanabinoir.photoviewerxyzen.ui.component
+package xyz.hanabinoir.photoviewerxyzen.util
 
-class SharedComponent {
+class Common {
     fun optimizeKeywords(raw: String): String? {
         if (raw.isEmpty()) { return null }
 
