@@ -1,8 +1,8 @@
 package xyz.hanabinoir.photoviewerxyzen.network
 
-class PhotoRepository {
+import kotlinx.coroutines.flow.Flow
+import xyz.hanabinoir.photoviewerxyzen.data.PhotoSearch
 
-    private val service = APIService.photoService
-
-    suspend fun getPhotos(query: String? = null) = service.getPhotos(query)
+interface PhotoRepository {
+    suspend fun getPhotos(query: String): Flow<PhotoSearch>
 }

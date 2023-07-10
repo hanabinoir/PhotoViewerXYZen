@@ -19,7 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -37,14 +36,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import xyz.hanabinoir.photoviewerxyzen.ui.PhotoViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import xyz.hanabinoir.photoviewerxyzen.data.Photo
 import xyz.hanabinoir.photoviewerxyzen.ui.NavScreen
-import xyz.hanabinoir.photoviewerxyzen.ui.component.SharedComponent
+import xyz.hanabinoir.photoviewerxyzen.ui.PhotoViewModel
+import xyz.hanabinoir.photoviewerxyzen.util.Common
 
 @Composable
 fun HomeScreen(
@@ -53,18 +52,24 @@ fun HomeScreen(
 ) {
     val res = viewModel.photos.observeAsState()
 
-    val photos = res.value?.photos ?: run {
-        StatusBox()
+    val photos = res.value ?: run {
+        StatusBox("loading...")
         return
     }
 
+    if (photos.isEmpty()) {
+        StatusBox("No result")
+    }
+
     Column {
-        SearchBar(onSearch = { raw ->
-            val keywords = SharedComponent().optimizeKeywords(raw)
-            keywords?.let {
-                viewModel.fetchPhotos(it)
+        SearchBar(
+            onSearch = { raw ->
+                val query = Common().optimizeKeywords(raw)
+                query?.let {
+                    viewModel.fetchPhotos(it)
+                }
             }
-        })
+        )
         PhotoList(photos = photos, selectPhoto = { photo, alt ->
             val route = "${NavScreen.Detail.route}?selectedPhoto=$photo&description=$alt"
             navController.navigate(route)
@@ -74,7 +79,9 @@ fun HomeScreen(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
-fun SearchBar(onSearch: (String) -> Unit) {
+fun SearchBar(
+    onSearch: (String) -> Unit
+) {
     var text by remember {
         mutableStateOf("")
     }
@@ -98,7 +105,9 @@ fun SearchBar(onSearch: (String) -> Unit) {
             Icon(
                 imageVector = Icons.Filled.Clear,
                 contentDescription = null,
-                modifier = Modifier.clickable { text = "" }
+                modifier = Modifier.clickable {
+                    text = ""
+                }
             )
         }
     )
@@ -157,13 +166,13 @@ private fun ListItem(
 }
 
 @Composable
-private fun StatusBox() {
+private fun StatusBox(msg: String) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Loading",
+            text = msg,
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold
         )
