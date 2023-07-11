@@ -1,36 +1,50 @@
 package xyz.hanabinoir.photoviewerxyzen.ui
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.onEmpty
-import kotlinx.coroutines.launch
-import xyz.hanabinoir.photoviewerxyzen.data.Photo
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.cachedIn
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import xyz.hanabinoir.photoviewerxyzen.data.PhotoPagingSource
 import xyz.hanabinoir.photoviewerxyzen.network.APIService
-import xyz.hanabinoir.photoviewerxyzen.network.PhotoRepositoryImpl
 
 class PhotoViewModel: ViewModel() {
 
-    private val repo = PhotoRepositoryImpl(APIService.photoService)
+    private val _search = MutableStateFlow("")
+    private val search = _search.asStateFlow()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(),
+            initialValue = "",
+        )
 
-    private val _photos = MutableLiveData<List<Photo>>(null)
-    val photos: LiveData<List<Photo>> = _photos
-
-    init {
-        fetchPhotos()
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    val pagedPhotos = search.debounce(300).flatMapLatest { query ->
+        Pager(
+            PagingConfig(
+                pageSize = 15
+            )
+        ) {
+            PhotoPagingSource(
+                APIService.photoService,
+                query
+            )
+        }.flow.cachedIn(viewModelScope)
     }
 
-    fun fetchPhotos(query: String = "people") {
-        viewModelScope.launch {
-            repo.getPhotos(query)
-                .flowOn(Dispatchers.IO)
-                .catch { e -> println(e.localizedMessage) }
-                .onEmpty { _photos.value = listOf() }
-                .collect { _photos.value = it.photos }
-        }
+    init {
+        searchPhotos()
+    }
+
+    fun searchPhotos(query: String = "people") {
+        _search.value = query
     }
 }
