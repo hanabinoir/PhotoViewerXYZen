@@ -40,11 +40,8 @@ class PhotoViewModel: ViewModel() {
         }.flow.cachedIn(viewModelScope)
     }
 
-    init {
-        searchPhotos()
-    }
-
-    fun searchPhotos(query: String = "people") {
-        _search.value = query
+    fun searchPhotos(query: String? = null) {
+        val q = query ?: search.value.ifEmpty { "people" }
+        _search.value = q
     }
 }
