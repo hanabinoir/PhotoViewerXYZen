@@ -7,5 +7,5 @@ import xyz.hanabinoir.photoviewerxyzen.data.PhotoSearch
 interface PhotoService {
 
     @GET("search")
-    suspend fun getPhotos(@Query("query") query: String): PhotoSearch
+    suspend fun getPhotos(@Query("query") query: String, @Query("page") page: Int?): PhotoSearch
 }

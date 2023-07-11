@@ -6,13 +6,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -20,16 +21,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -39,7 +41,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
+import xyz.hanabinoir.photoviewerxyzen.R
 import xyz.hanabinoir.photoviewerxyzen.data.Photo
 import xyz.hanabinoir.photoviewerxyzen.ui.NavScreen
 import xyz.hanabinoir.photoviewerxyzen.ui.PhotoViewModel
@@ -50,23 +56,15 @@ fun HomeScreen(
     navController: NavController = rememberNavController(),
     viewModel: PhotoViewModel = viewModel()
 ) {
-    val res = viewModel.photos.observeAsState()
 
-    val photos = res.value ?: run {
-        StatusBox("loading...")
-        return
-    }
-
-    if (photos.isEmpty()) {
-        StatusBox("No result")
-    }
+    val photos = viewModel.pagedPhotos.collectAsLazyPagingItems()
 
     Column {
         SearchBar(
             onSearch = { raw ->
                 val query = Common().optimizeKeywords(raw)
                 query?.let {
-                    viewModel.fetchPhotos(it)
+                    viewModel.searchPhotos(it)
                 }
             }
         )
@@ -87,6 +85,7 @@ fun SearchBar(
     }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    val clearAlpha = if (text.isEmpty()) 0f else 1.0f
 
     TextField(
         modifier = Modifier.fillMaxWidth(),
@@ -105,9 +104,11 @@ fun SearchBar(
             Icon(
                 imageVector = Icons.Filled.Clear,
                 contentDescription = null,
-                modifier = Modifier.clickable {
-                    text = ""
-                }
+                modifier = Modifier
+                    .alpha(clearAlpha)
+                    .clickable {
+                        text = ""
+                    }
             )
         }
     )
@@ -115,7 +116,7 @@ fun SearchBar(
 
 @Composable
 private fun PhotoList(
-    photos: List<Photo>,
+    photos: LazyPagingItems<Photo>,
     selectPhoto: (String, String) -> Unit
 ) {
     LazyColumn(
@@ -124,10 +125,30 @@ private fun PhotoList(
                 all = 16.dp
             )
     ) {
-        items(photos) { item: Photo ->
-            ListItem(item = item) { photo, desc ->
-                selectPhoto(photo, desc)
+        if (photos.loadState.refresh == LoadState.Loading) {
+            item {
+                StatusBox(stringResource(id = R.string.status_loading))
             }
+        }
+
+        items(
+            photos.itemCount
+
+        ) { i ->
+            photos[i]?.let {
+                ListItem(item = it, selectPhoto)
+            }
+        }
+
+        if (photos.loadState.append == LoadState.Loading) {
+            item {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                )
+            }
+
         }
     }
 }
