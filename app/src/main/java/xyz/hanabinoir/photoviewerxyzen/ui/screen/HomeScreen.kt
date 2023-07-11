@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +59,10 @@ fun HomeScreen(
 ) {
 
     val photos = viewModel.pagedPhotos.collectAsLazyPagingItems()
+
+    LaunchedEffect(Unit) {
+        viewModel.searchPhotos()
+    }
 
     Column {
         SearchBar(
