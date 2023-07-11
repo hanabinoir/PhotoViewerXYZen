@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -84,6 +85,7 @@ fun SearchBar(
     }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    val clearAlpha = if (text.isEmpty()) 0f else 1.0f
 
     TextField(
         modifier = Modifier.fillMaxWidth(),
@@ -102,9 +104,11 @@ fun SearchBar(
             Icon(
                 imageVector = Icons.Filled.Clear,
                 contentDescription = null,
-                modifier = Modifier.clickable {
-                    text = ""
-                }
+                modifier = Modifier
+                    .alpha(clearAlpha)
+                    .clickable {
+                        text = ""
+                    }
             )
         }
     )
